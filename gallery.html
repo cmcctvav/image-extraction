@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background-color: #e7f0eb;
+      padding: 20px;
+    }
+
+    .summary {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(135deg, #3d5a4e, #2d4a3e);
+      padding: 15px 20px;
+      margin-bottom: 0;
+      box-shadow: 
+        0 4px 20px rgba(0,0,0,0.1),
+        0 0 0 1px rgba(255,255,255,0.05);
+      z-index: 100;
+      color: white;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .summary::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, 
+        rgba(0,0,0,0.1) 0%,
+        rgba(0,0,0,0.2) 50%,
+        rgba(0,0,0,0.1) 100%
+      );
+    }
+
+    .summary::after {
+      content: '';
+      position: absolute;
+      bottom: -20px;
+      left: 0;
+      right: 0;
+      height: 20px;
+      background: linear-gradient(to bottom,
+        rgba(0,0,0,0.25) 0%,
+        rgba(0,0,0,0.15) 40%,
+        rgba(0,0,0,0.08) 70%,
+        rgba(0,0,0,0) 100%
+      );
+      pointer-events: none;
+    }
+
+    .summary h2 {
+      margin-bottom: 12px;
+      color: #ecf0f1;
+      font-size: 16px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .summary h2::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 16px;
+      background: linear-gradient(to bottom, #3498db, #2980b9);
+      margin-right: 8px;
+      border-radius: 2px;
+      box-shadow: 0 2px 4px rgba(52,152,219,0.3);
+    }
+
+    .title-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .dimension-groups-wrapper {
+      position: relative;
+      margin-bottom: 12px;
+      padding: 0;
+      overflow: visible;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .dimension-groups {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      max-height: 52px;
+      overflow: hidden;
+      transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+      background: rgba(45, 74, 62, 0.95);
+      padding: 14px 25px;
+      border-radius: 10px;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      opacity: 0.95;
+      width: 100%;
+      margin: 0;
+      position: relative;
+    }
+
+    .dimension-groups.expanded {
+      max-height: 300px;
+      overflow-y: auto;
+      opacity: 1;
+      padding-right: 25px;
+      padding-bottom: 16px;
+    }
+
+    .dimension-group {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      font-size: 13px;
+      color: #ecf0f1;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.2s ease;
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      min-width: 110px;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .dimension-group:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .dimension-checkbox {
+      margin-right: 8px;
+      width: 14px;
+      height: 14px;
+      accent-color: #3498db;
+    }
+
+    .hidden-card {
+      display: none !important;
+    }
+
+    .clear-filter {
+      padding: 6px 12px;
+      background-color: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #ecf0f1;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+
+    .clear-filter:hover {
+      background-color: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 15px;
+      padding: 20px;
+      margin-top: 160px;
+      background: #e7f0eb;
+      min-height: auto;
+      position: relative;
+      box-shadow: 
+        inset 0 15px 10px -10px rgba(0,0,0,0.1),
+        inset 0 20px 15px -15px rgba(0,0,0,0.05);
+    }
+
+    .image-card {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .image-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+    }
+
+    .image-container {
+      position: relative;
+      padding-top: 100%; /* 1:1 比例 */
+    }
+
+    .image-container img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #edf5f1;
+    }
+
+    .image-info {
+      padding: 10px;
+      background: #edf5f1;
+      border-top: 1px solid #dae6e0;
+    }
+
+    .dimension-info {
+      font-size: 12px;
+      color: #6c757d;
+      margin-bottom: 8px;
+    }
+
+    .copy-button {
+      width: 100%;
+      padding: 6px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background-color 0.2s;
+    }
+
+    .copy-button:hover {
+      background-color: #2980b9;
+    }
+
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #28a745;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 4px;
+      z-index: 2000;
+      font-size: 14px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      padding: 0 15px;
+      height: 100%;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .image-count {
+      color: #ecf0f1;
+      font-size: 13px;
+      padding: 0 12px;
+      border-left: 1px solid rgba(255, 255, 255, 0.2);
+      border-right: 1px solid rgba(255, 255, 255, 0.2);
+      white-space: nowrap;
+      opacity: 1;
+      z-index: 100;
+      flex-shrink: 0;
+      display: inline-block;
+      min-width: 200px;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      margin: 0 8px;
+      line-height: 28px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    .expand-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      color: #ecf0f1;
+      font-size: 14px;
+    }
+
+    .expand-icon {
+      font-size: 12px;
+      transition: transform 0.2s;
+    }
+
+    .dimension-groups.expanded + .header-content .expand-icon {
+      transform: rotate(180deg);
+    }
+
+    .clear-filter,
+    .reset-sort,
+    .batch-download,
+    .sort-select {
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 4px;
+      font-size: 13px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .sort-select {
+      width: 100px;
+      min-width: 100px;
+      max-width: 100px;
+    }
+
+    .sort-select {
+      padding: 6px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      font-size: 13px;
+      color: #ecf0f1;
+      background-color: rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-width: 120px;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ecf0f1' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      padding-right: 28px;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+
+    .sort-select:hover {
+      background-color: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .sort-select:focus {
+      outline: none;
+      border-color: #3498db;
+      box-shadow: 0 0 0 2px rgba(52,152,219,0.3);
+    }
+
+    .sort-select option {
+      background-color: #2c3e50;
+      color: #ecf0f1;
+    }
+
+    .reset-sort,
+    .clear-filter {
+      padding: 6px 12px;
+      background-color: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #ecf0f1;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+
+    .reset-sort:hover,
+    .clear-filter:hover {
+      background-color: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .reset-sort {
+      padding: 6px 12px;
+      background-color: #e9ecef;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #495057;
+    }
+
+    .reset-sort:hover {
+      background-color: #dee2e6;
+    }
+
+    .image-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .copy-button,
+    .download-button {
+      flex: 1;
+      padding: 6px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background-color 0.2s;
+    }
+
+    .download-button {
+      background-color: #2ecc71;
+    }
+
+    .copy-button:hover {
+      background-color: #2980b9;
+    }
+
+    .download-button:hover {
+      background-color: #27ae60;
+    }
+
+    .view-original {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      padding: 4px 8px;
+      background-color: rgba(0, 0, 0, 0.6);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      opacity: 0;
+      transition: opacity 0.2s, background-color 0.2s;
+    }
+
+    .view-original:hover {
+      background-color: rgba(0, 0, 0, 0.8);
+    }
+
+    .image-container:hover .view-original {
+      opacity: 1;
+    }
+
+    .original-viewer {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 50%;
+      right: auto;
+      transform: translateX(-50%);
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      z-index: 2000;
+      cursor: zoom-out;
+    }
+
+    .viewer-tip {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(0, 0, 0, 0.6);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    .original-viewer img {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 90vw;
+      max-height: 90vh;
+      object-fit: contain;
+    }
+
+    .progress-container {
+      background: #f5f9f7;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .progress-bar {
+      height: 4px;
+      background: #e6f0eb;
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0;
+      background: #2196F3;
+      animation: progress 1s ease-in-out infinite;
+    }
+
+    @keyframes progress {
+      0% { width: 0; left: 0; }
+      50% { width: 30%; left: 35% }
+      100% { width: 0; left: 100% }
+    }
+
+    .progress-text {
+      font-size: 13px;
+      color: #666;
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    .dimension-groups.expanded::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .dimension-groups.expanded::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .dimension-groups.expanded::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
+
+    .dimension-groups.expanded::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .status-indicator {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      background: rgba(45, 74, 62, 0.95);
+      padding: 8px 12px;
+      border-radius: 8px;
+      color: #ecf0f1;
+      font-size: 13px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .status-indicator.idle {
+      background: rgba(108, 122, 116, 0.95);
+      color: #ecf0f1;
+    }
+
+    .status-indicator.idle .status-dot {
+      background: #95a5a6;
+    }
+
+    .status-indicator.idle .status-dot.scanning::after {
+      border-color: #95a5a6;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #2ecc71;
+      position: relative;
+      transition: background-color 0.3s ease;
+    }
+
+    .new-images-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #e74c3c;
+      color: white;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .new-images-badge.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .batch-download {
+      padding: 0 12px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .batch-download:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      background: linear-gradient(135deg, #219a52, #29b765);
+    }
+
+    .batch-download:active {
+      transform: translateY(0);
+    }
+
+    .batch-download::before {
+      content: '';
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    .dimension-header {
+      background: rgba(45, 74, 62, 0.95);
+      border-radius: 8px;
+      width: calc(100% + 60px);
+      margin: 0 -30px;
+      padding: 0 30px;
+      height: 44px;
+      overflow: visible;
+    }
+  </style>
+</head>
+<body>
+  <div class="progress-container" id="progressContainer" style="display: none;">
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="progress-text" id="progressText">正在���取图片...</div>
+  </div>
+  <div class="summary" id="summary">
+    <h2>
+      <div class="title-container">
+        <span class="title-text">图片提取</span>
+      </div>
+    </h2>
+    <div class="dimension-groups-wrapper">
+      <div class="dimension-header">
+        <div class="header-content">
+          <div class="header-left">
+            <div class="expand-button">
+              <span>分辨率统计</span>
+              <span class="expand-icon">▼</span>
+            </div>
+          </div>
+          <span class="image-count">0/0张图片</span>
+          <div class="header-actions">
+            <button class="clear-filter" id="clearFilter">取消全选</button>
+            <select class="sort-select" id="sortSelect">
+              <option value="dimension-desc" selected>大尺寸优先</option>
+              <option value="dimension-asc">小尺寸优先</option>
+              <option value="width-desc">宽度优先</option>
+              <option value="width-asc">窄幅优先</option>
+              <option value="height-desc">高度优先</option>
+              <option value="height-asc">矮幅优先</option>
+            </select>
+            <button class="reset-sort" id="resetSort">恢复默认排序</button>
+            <button class="batch-download" id="batchDownload">批量下载</button>
+          </div>
+        </div>
+      </div>
+      <div class="dimension-groups" id="dimensionGroups"></div>
+    </div>
+  </div>
+  <div class="image-grid" id="imageGrid"></div>
+  <div class="status-indicator" id="statusIndicator">
+    <div class="status-dot" id="statusDot"></div>
+    <div class="status-text" id="statusText">
+      <span class="status-label">监听中</span>
+      <span class="status-count"></span>
+    </div>
+    <div class="new-images-badge" id="newImagesBadge">0</div>
+  </div>
+  <script src="lib/jszip.min.js"></script>
+  <script src="gallery.js"></script>
+</body>
+</html> 
